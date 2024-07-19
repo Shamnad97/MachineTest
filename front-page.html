@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Table and Display in Cards</title>
+    <link rel="stylesheet" href="/home/boss/Documents/MachineTest/css/styles.css">
+</head>
+<body>
+
+    <button id="myBtn">Create Table</button>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Create a New Table</h2>
+            <div class="form-group">
+                <label for="tableName">Table Name:</label>
+                <input type="text" id="tableName" name="tableName">
+            </div>
+            <div class="form-group">
+                <label for="tableType">Table Type:</label>
+                <select id="tableType" name="tableType">
+                    <option value="square">Square</option>
+                    <option value="circle">Circle</option>
+                    <option value="rectangle">Rectangle</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="numSeats">Number of Seats:</label>
+                <input type="number" id="numSeats" name="numSeats" min="1">
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+            <button id="submitBtn">Submit</button>
+        </div>
+
+    </div>
+
+    <!-- Container for displaying tables -->
+    <div id="tableContainer" class="table-container">
+        <!-- Tables will be dynamically added here -->
+    </div>
+
+    <script>
+        var modal = document.getElementById("myModal");
+        var btn = document.getElementById("myBtn");
+        var span = document.getElementsByClassName("close")[0];
+        var submitBtn = document.getElementById("submitBtn");
+        var tableContainer = document.getElementById("tableContainer");
+        var tableCount = 1;
+        var editMode = false;
+        var currentEditCard = null;
+
+        btn.onclick = function() {
+            modal.style.display = "block";
+            resetForm();
+        }
+
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        submitBtn.onclick = function() {
+            var tableName = document.getElementById("tableName").value;
+            var tableType = document.getElementById("tableType").value;
+            var numSeats = document.getElementById("numSeats").value;
+            var description = document.getElementById("description").value;
+
+            if (editMode) {
+                updateCard(currentEditCard, tableName, tableType, numSeats, description);
+            } else {
+                createCard(tableName, tableType, numSeats, description);
+            }
+
+            modal.style.display = "none";
+            resetForm();
+        }
+
+        function createCard(tableName, tableType, numSeats, description) {
+            var tableCard = document.createElement("div");
+            tableCard.classList.add("table-card");
+            tableCard.onclick = function() {
+                var url = `view-page.html?tableName=${encodeURIComponent(tableName)}&type=${tableType}&seats=${numSeats}`;
+                window.location.href = url;
+            };
+
+            var tableShape = createTableShape(tableType, numSeats);
+
+            tableCard.innerHTML = `
+                <div class="icons">
+                    <span class="icon" onclick="editTable(event, '${tableName}', '${tableType}', ${numSeats}, '${description}', this)">✏️</span>
+                    <span class="icon" onclick="deleteTable(event)">🗑️</span>
+                </div>
+                <h3>${tableName}</h3>
+                <div class="table-description">
+                    <p>${description}</p>
+                </div>
+                <div class="table-shape-container">
+                    ${tableShape.outerHTML}
+                </div>
+                <div class="table-footer">
+                    <p>Total Seats: ${numSeats}</p>
+                </div>
+            `;
+
+            tableContainer.appendChild(tableCard);
+            tableCount++;
+        }
+
+        function updateCard(card, tableName, tableType, numSeats, description) {
+            var tableShape = createTableShape(tableType, numSeats);
+
+            card.innerHTML = `
+                <div class="icons">
+                    <span class="icon" onclick="editTable(event, '${tableName}', '${tableType}', ${numSeats}, '${description}', this)">✏️</span>
+                    <span class="icon" onclick="deleteTable(event)">🗑️</span>
+                </div>
+                <h3>${tableName}</h3>
+                <div class="table-description">
+                    <p>${description}</p>
+                </div>
+                <div class="table-shape-container">
+                    ${tableShape.outerHTML}
+                </div>
+                <div class="table-footer">
+                    <p>Total Seats: ${numSeats}</p>
+                </div>
+            `;
+
+            card.onclick = function() {
+                var url = `view-page.html?tableName=${encodeURIComponent(tableName)}&type=${tableType}&seats=${numSeats}`;
+                window.location.href = url;
+            };
+        }
+
+        function resetForm() {
+            document.getElementById("tableName").value = "";
+            document.getElementById("tableType").value = "square";
+            document.getElementById("numSeats").value = 1;
+            document.getElementById("description").value = "";
+            editMode = false;
+            currentEditCard = null;
+        }
+
+        function editTable(event, tableName, tableType, numSeats, description, iconElement) {
+            event.stopPropagation();
+            document.getElementById("tableName").value = tableName;
+            document.getElementById("tableType").value = tableType;
+            document.getElementById("numSeats").value = numSeats;
+            document.getElementById("description").value = description;
+            modal.style.display = "block";
+            editMode = true;
+            currentEditCard = iconElement.closest(".table-card");
+        }
+
+        function deleteTable(event) {
+            event.stopPropagation();
+            var tableCard = event.target.closest(".table-card");
+            if (tableCard) {
+                tableCard.remove();
+            }
+        }
+
+        function createTableShape(tableType, numSeats) {
+            var tableShape = document.createElement("div");
+            tableShape.classList.add("table-shape", tableType);
+
+            if (tableType === "rectangle") {
+                tableShape.classList.add("rectangle");
+            } else if (tableType === "square") {
+                tableShape.classList.add("square");
+            } else if (tableType === "circle") {
+                tableShape.classList.add("circle");
+            }
+
+            var angleStep = 360 / numSeats;
+            var radius = 50; // Adjust this value as needed
+            for (var i = 0; i < numSeats; i++) {
+                var angle = angleStep * i;
+                var x = radius * Math.cos(angle * Math.PI / 180);
+                var y = radius * Math.sin(angle * Math.PI / 180);
+                var seat = document.createElement("div");
+                seat.classList.add("seat");
+                seat.style.left = `calc(50% + ${x}px)`;
+                seat.style.top = `calc(50% + ${y}px)`;
+                seat.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2C10.355 2 9 3.355 9 5s1.355 3 3 3 3-1.355 3-3S13.645 2 12 2zm0 8c-2.761 0-5 2.239-5 5v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-2.761-2.239-5-5-5z"/></svg>';
+                tableShape.appendChild(seat);
+            }
+
+            return tableShape;
+        }
+    </script>
+
+</body>
+</html>
